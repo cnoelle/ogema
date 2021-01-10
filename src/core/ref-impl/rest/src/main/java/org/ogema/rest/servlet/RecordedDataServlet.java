@@ -35,6 +35,7 @@ import javax.servlet.http.HttpServletResponse;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.ogema.accesscontrol.RestAccess;
+import org.ogema.accesscontrol.RestCorsManager;
 import org.ogema.core.application.ApplicationManager;
 import org.ogema.core.model.Resource;
 import org.ogema.core.model.simple.BooleanResource;
@@ -75,9 +76,9 @@ class RecordedDataServlet extends HttpServlet {
 
     private final DataRecorder rda;
 	private final RestAccess restAcc;
-	private final CorsTool cors;
+	private final RestCorsManager cors;
 	
-	RecordedDataServlet(RestAccess restAcc, DataRecorder rda, CorsTool cors) {
+	RecordedDataServlet(RestAccess restAcc, DataRecorder rda, RestCorsManager cors) {
 		this.restAcc = Objects.requireNonNull(restAcc);
 		this.rda = Objects.requireNonNull(rda);
 		this.cors = Objects.requireNonNull(cors);
@@ -85,7 +86,7 @@ class RecordedDataServlet extends HttpServlet {
 	
     @Override
     protected void doOptions(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
-    	this.cors.handleOptions(req, resp, SUPPORTED_METHODS);
+    	this.cors.handleOptionsRequest(req, resp, SUPPORTED_METHODS, true);
     }
     
     // two alternative ways to restrict the time interval: either append "/" + timestamp; OR use request
@@ -99,7 +100,7 @@ class RecordedDataServlet extends HttpServlet {
 		if (appman == null) {
             return;
         }
-		this.cors.handleOther(req, resp);
+		this.cors.handleOtherRequest(req, resp);
         try {
 	        final String pathInfo = req.getPathInfo();
 	        if (pathInfo == null || pathInfo.isEmpty()) {
@@ -199,7 +200,7 @@ class RecordedDataServlet extends HttpServlet {
 					req.getPathInfo(), (appman != null), Utils.mapParameters(req));
 		if (appman == null)
             return;
-		this.cors.handleOther(req, resp);
+		this.cors.handleOtherRequest(req, resp);
     	try {
 	        final String pathInfo = req.getPathInfo();
 	        if (pathInfo == null || pathInfo.isEmpty()) {
@@ -272,7 +273,7 @@ class RecordedDataServlet extends HttpServlet {
 					req.getPathInfo(), (appman != null), Utils.mapParameters(req));
 		if (appman == null)
             return;
-		this.cors.handleOther(req, resp);
+		this.cors.handleOtherRequest(req, resp);
     	try {
 	        final String pathInfo = req.getPathInfo();
 	        if (pathInfo == null || pathInfo.isEmpty()) {

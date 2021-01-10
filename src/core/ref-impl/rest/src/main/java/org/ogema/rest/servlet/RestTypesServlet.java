@@ -25,6 +25,7 @@ import javax.servlet.http.HttpServletResponse;
 
 import org.ogema.accesscontrol.PermissionManager;
 import org.ogema.accesscontrol.RestAccess;
+import org.ogema.accesscontrol.RestCorsManager;
 import org.ogema.core.application.ApplicationManager;
 import org.ogema.core.model.Resource;
 import org.ogema.rest.servlet.ResourceTypeWriters.ResourceTypeWriter;
@@ -50,9 +51,9 @@ class RestTypesServlet extends HttpServlet  {
 
 	private final PermissionManager permMan;
 	private final RestAccess restAcc;
-	private final CorsTool cors;
+	private final RestCorsManager cors;
 	
-	RestTypesServlet(PermissionManager permMan, RestAccess restAcc, CorsTool cors) {
+	RestTypesServlet(PermissionManager permMan, RestAccess restAcc, RestCorsManager cors) {
 		this.permMan = Objects.requireNonNull(permMan);
 		this.restAcc = Objects.requireNonNull(restAcc);
 		this.cors = Objects.requireNonNull(cors);
@@ -60,7 +61,7 @@ class RestTypesServlet extends HttpServlet  {
 
     @Override
     protected void doOptions(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
-    	this.cors.handleOptions(req, resp, SUPPORTED_METHODS);
+    	this.cors.handleOptionsRequest(req, resp, SUPPORTED_METHODS, true);
     }
 
 	// TODO get subresources of specific type
@@ -71,7 +72,7 @@ class RestTypesServlet extends HttpServlet  {
 		if (appman == null) {
 			return;
 		}
-		this.cors.handleOther(req, resp);
+		this.cors.handleOtherRequest(req, resp);
 		try {
 			resp.setCharacterEncoding("UTF-8");
 			ResourceTypeWriter w = ResourceTypeWriters.forRequest(req, appman);

@@ -15,11 +15,6 @@
  */
 package org.ogema.rest.servlet;
 
-import java.security.AccessController;
-import java.security.PrivilegedAction;
-import java.util.ArrayList;
-import java.util.List;
-
 import javax.servlet.ServletException;
 
 import org.apache.felix.scr.annotations.Component;
@@ -27,6 +22,7 @@ import org.apache.felix.scr.annotations.Reference;
 import org.apache.felix.scr.annotations.Service;
 import org.ogema.accesscontrol.PermissionManager;
 import org.ogema.accesscontrol.RestAccess;
+import org.ogema.accesscontrol.RestCorsManager;
 import org.ogema.core.application.Application;
 import org.ogema.core.application.ApplicationManager;
 import org.ogema.recordeddata.DataRecorder;
@@ -42,7 +38,6 @@ import org.slf4j.LoggerFactory;
 @Service(Application.class)
 public class RestApp implements Application {
 
-	private static final String ALLOWED_ORIGIN_PROPERTY = "org.ogema.rest.allowedOrigin";
 	static final Logger logger = LoggerFactory.getLogger(RestApp.class);
 	private ApplicationManager appMan;
 	
@@ -56,26 +51,14 @@ public class RestApp implements Application {
 	private RestAccess restAccess;
 	
 	@Reference
+	private RestCorsManager cors;
+	
+	@Reference
 	private DataRecorder dataRecorder;
 	
 	@Override
 	public void start(final ApplicationManager appManager) {
 		this.appMan = appManager;
-		String allowedOrigin0 = AccessController.doPrivileged(new PrivilegedAction<String>() {
-
-			@Override
-			public String run() {
-				return appManager.getAppID().getBundle().getBundleContext().getProperty(ALLOWED_ORIGIN_PROPERTY);
-			}
-		});
-		allowedOrigin0 = allowedOrigin0 == null ? "" : allowedOrigin0;
-		final List<String> origins= new ArrayList<>();
-		for (String o: allowedOrigin0.split(",")) {
-			final String o2 = o.trim();
-			if (!o2.isEmpty())
-				origins.add(o2);
-		}
-		final CorsTool cors = new CorsTool(origins.isEmpty() ? null : origins);
 		RestServlet restServlet = new RestServlet(permMan, restAccess, cors);
 		try {
 			http.registerServlet(RestServlet.ALIAS, restServlet, null, null);

@@ -27,6 +27,7 @@ import javax.servlet.http.HttpServletResponse;
 
 import org.ogema.accesscontrol.PermissionManager;
 import org.ogema.accesscontrol.RestAccess;
+import org.ogema.accesscontrol.RestCorsManager;
 import org.ogema.core.application.ApplicationManager;
 import org.ogema.rest.patternmimic.FakePattern;
 import org.ogema.rest.patternmimic.ResourcePatternWriters;
@@ -44,9 +45,9 @@ class RestPatternServlet extends HttpServlet  {
 
 	private final PermissionManager permMan;
 	private final RestAccess restAcc;
-	private final CorsTool cors;
+	private final RestCorsManager cors;
 	
-	RestPatternServlet(PermissionManager permMan, RestAccess restAcc, CorsTool cors) {
+	RestPatternServlet(PermissionManager permMan, RestAccess restAcc, RestCorsManager cors) {
 		this.permMan = Objects.requireNonNull(permMan);
 		this.restAcc = Objects.requireNonNull(restAcc);
 		this.cors = Objects.requireNonNull(cors);
@@ -54,7 +55,7 @@ class RestPatternServlet extends HttpServlet  {
     
     @Override
     protected void doOptions(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
-    	this.cors.handleOptions(req, resp, SUPPORTED_METHODS);
+    	this.cors.handleOptionsRequest(req, resp, SUPPORTED_METHODS, true);
     }
 	
 	@Override
@@ -66,7 +67,7 @@ class RestPatternServlet extends HttpServlet  {
 		if (appman == null) {
 			return;
 		}
-		this.cors.handleOther(req, resp);
+		this.cors.handleOtherRequest(req, resp);
         StringBuilder sb = new StringBuilder();
         BufferedReader reader = req.getReader();
         try {

@@ -25,6 +25,7 @@ import javax.servlet.http.HttpServletResponse;
 
 import org.ogema.accesscontrol.PermissionManager;
 import org.ogema.accesscontrol.RestAccess;
+import org.ogema.accesscontrol.RestCorsManager;
 import org.ogema.core.application.ApplicationManager;
 import org.ogema.core.model.Resource;
 import org.ogema.core.model.schedule.Schedule;
@@ -72,9 +73,9 @@ class RestServlet extends HttpServlet  {
 
 	private final PermissionManager permMan;
 	private final RestAccess restAcc;
-	private final CorsTool cors;
+	private final RestCorsManager cors;
 	
-	RestServlet(PermissionManager permMan, RestAccess restAcc, CorsTool cors) {
+	RestServlet(PermissionManager permMan, RestAccess restAcc, RestCorsManager cors) {
 		this.permMan = Objects.requireNonNull(permMan);
 		this.restAcc = Objects.requireNonNull(restAcc);
 		this.cors = cors;
@@ -82,7 +83,7 @@ class RestServlet extends HttpServlet  {
 	
     @Override
     protected void doOptions(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
-    	this.cors.handleOptions(req, resp, RestServlet.SUPPORTED_METHODS);
+    	this.cors.handleOptionsRequest(req, resp, RestServlet.SUPPORTED_METHODS, true);
     }
 
 	@Override
@@ -94,7 +95,7 @@ class RestServlet extends HttpServlet  {
 		if (appman == null) {
 			return;
 		}
-		this.cors.handleOther(req, resp);
+		this.cors.handleOtherRequest(req, resp);
 		try {
 			resp.setCharacterEncoding("UTF-8");
 			final SerializationManager sman = getSerializationManager(req, resp, appman);
@@ -149,7 +150,7 @@ class RestServlet extends HttpServlet  {
 			if (appman == null) {
 				return;
 			}
-			this.cors.handleOther(req, resp);
+			this.cors.handleOtherRequest(req, resp);
 			resp.setCharacterEncoding("UTF-8");
 			ResourceRequestInfo r = selectResource(req.getPathInfo(), appman);
 			if (r == null) {
@@ -198,7 +199,7 @@ class RestServlet extends HttpServlet  {
 			if (appman == null) {
 				return;
 			}
-			this.cors.handleOther(req, resp);
+			this.cors.handleOtherRequest(req, resp);
 			SerializationManager sman = getSerializationManager(req, resp, appman);
 			ResourceReader reader = ResourceReaders.forRequest(req, sman, resp);
 			ResourceWriter w = ResourceWriters.forRequest(req, sman, resp);
@@ -241,7 +242,7 @@ class RestServlet extends HttpServlet  {
 			if (appman == null) {
 				return;
 			}
-			this.cors.handleOther(req, resp);
+			this.cors.handleOtherRequest(req, resp);
 			resp.setCharacterEncoding("UTF-8");
 			String path = req.getPathInfo();
 			if (path == null || path.equals("/")) {

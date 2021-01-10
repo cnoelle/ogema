@@ -17,8 +17,6 @@ package org.ogema.accesscontrol;
 
 import java.io.IOException;
 import java.security.AccessControlContext;
-import java.security.Permission;
-import java.security.ProtectionDomain;
 
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
