@@ -93,7 +93,10 @@ class RestPatternServlet extends HttpServlet  {
 			RestApp.logger.debug("Pattern POST failed", se);
 			resp.sendError(HttpServletResponse.SC_FORBIDDEN);
 		} catch (Exception e) {
-			RestApp.logger.warn("REST pattern de-/serialization failed " + e);
+			if (RestApp.logger.isDebugEnabled())
+				RestApp.logger.warn("REST pattern de-/serialization failed ", e);
+			else
+				RestApp.logger.warn("REST pattern de-/serialization failed " + e);
 			resp.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
 		} finally {
 			try {
