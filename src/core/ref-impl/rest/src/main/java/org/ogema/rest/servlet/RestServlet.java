@@ -48,6 +48,7 @@ class RestServlet extends HttpServlet  {
 
 	private static final long serialVersionUID = 1L;
 
+	private static final String SUPPORTED_METHODS = "DELETE, GET, OPTIONS, POST, PUT";
 	final static String ALIAS = "/rest/resources";
 
 	/**
@@ -71,16 +72,17 @@ class RestServlet extends HttpServlet  {
 
 	private final PermissionManager permMan;
 	private final RestAccess restAcc;
+	private final CorsTool cors;
 	
-	RestServlet(PermissionManager permMan, RestAccess restAcc) {
+	RestServlet(PermissionManager permMan, RestAccess restAcc, CorsTool cors) {
 		this.permMan = Objects.requireNonNull(permMan);
 		this.restAcc = Objects.requireNonNull(restAcc);
+		this.cors = cors;
 	}
 	
     @Override
     protected void doOptions(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
-        resp.setStatus(200);
-        resp.setHeader("Allow", "DELETE, GET, OPTIONS, POST, PUT");
+    	this.cors.handleOptions(req, resp, RestServlet.SUPPORTED_METHODS);
     }
 
 	@Override
@@ -92,6 +94,7 @@ class RestServlet extends HttpServlet  {
 		if (appman == null) {
 			return;
 		}
+		this.cors.handleOther(req, resp);
 		try {
 			resp.setCharacterEncoding("UTF-8");
 			final SerializationManager sman = getSerializationManager(req, resp, appman);
@@ -146,6 +149,7 @@ class RestServlet extends HttpServlet  {
 			if (appman == null) {
 				return;
 			}
+			this.cors.handleOther(req, resp);
 			resp.setCharacterEncoding("UTF-8");
 			ResourceRequestInfo r = selectResource(req.getPathInfo(), appman);
 			if (r == null) {
@@ -194,6 +198,7 @@ class RestServlet extends HttpServlet  {
 			if (appman == null) {
 				return;
 			}
+			this.cors.handleOther(req, resp);
 			SerializationManager sman = getSerializationManager(req, resp, appman);
 			ResourceReader reader = ResourceReaders.forRequest(req, sman, resp);
 			ResourceWriter w = ResourceWriters.forRequest(req, sman, resp);
@@ -236,6 +241,7 @@ class RestServlet extends HttpServlet  {
 			if (appman == null) {
 				return;
 			}
+			this.cors.handleOther(req, resp);
 			resp.setCharacterEncoding("UTF-8");
 			String path = req.getPathInfo();
 			if (path == null || path.equals("/")) {

@@ -39,20 +39,22 @@ class RestPatternServlet extends HttpServlet  {
 
 	private static final long serialVersionUID = 1L;
 
+	private static final String SUPPORTED_METHODS = "OPTIONS, POST";
 	final static String ALIAS = "/rest/patterns";
 
 	private final PermissionManager permMan;
 	private final RestAccess restAcc;
+	private final CorsTool cors;
 	
-	RestPatternServlet(PermissionManager permMan, RestAccess restAcc) {
+	RestPatternServlet(PermissionManager permMan, RestAccess restAcc, CorsTool cors) {
 		this.permMan = Objects.requireNonNull(permMan);
 		this.restAcc = Objects.requireNonNull(restAcc);
+		this.cors = Objects.requireNonNull(cors);
 	}
     
     @Override
     protected void doOptions(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
-        resp.setStatus(200);
-        resp.setHeader("Allow", "OPTIONS, POST");
+    	this.cors.handleOptions(req, resp, SUPPORTED_METHODS);
     }
 	
 	@Override
@@ -64,6 +66,7 @@ class RestPatternServlet extends HttpServlet  {
 		if (appman == null) {
 			return;
 		}
+		this.cors.handleOther(req, resp);
         StringBuilder sb = new StringBuilder();
         BufferedReader reader = req.getReader();
         try {

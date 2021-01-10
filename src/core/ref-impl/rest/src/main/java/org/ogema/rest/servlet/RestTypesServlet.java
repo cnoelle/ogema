@@ -34,6 +34,7 @@ import org.ogema.rest.servlet.ResourceTypeWriters.ResourceTypeWriter;
 //@Property(name = HttpWhiteboardConstants.HTTP_WHITEBOARD_SERVLET_PATTERN, value = RestTypesServlet.ALIAS)
 class RestTypesServlet extends HttpServlet  {
 
+	private static final String SUPPORTED_METHODS = "GET, OPTIONS";
 	private static final long serialVersionUID = 1L;
 
 	final static String ALIAS = "/rest/resourcelists";
@@ -49,16 +50,17 @@ class RestTypesServlet extends HttpServlet  {
 
 	private final PermissionManager permMan;
 	private final RestAccess restAcc;
+	private final CorsTool cors;
 	
-	RestTypesServlet(PermissionManager permMan, RestAccess restAcc) {
+	RestTypesServlet(PermissionManager permMan, RestAccess restAcc, CorsTool cors) {
 		this.permMan = Objects.requireNonNull(permMan);
 		this.restAcc = Objects.requireNonNull(restAcc);
+		this.cors = Objects.requireNonNull(cors);
 	}
 
     @Override
     protected void doOptions(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
-        resp.setStatus(200);
-        resp.setHeader("Allow", "GET, OPTIONS");
+    	this.cors.handleOptions(req, resp, SUPPORTED_METHODS);
     }
 
 	// TODO get subresources of specific type
@@ -69,6 +71,7 @@ class RestTypesServlet extends HttpServlet  {
 		if (appman == null) {
 			return;
 		}
+		this.cors.handleOther(req, resp);
 		try {
 			resp.setCharacterEncoding("UTF-8");
 			ResourceTypeWriter w = ResourceTypeWriters.forRequest(req, appman);

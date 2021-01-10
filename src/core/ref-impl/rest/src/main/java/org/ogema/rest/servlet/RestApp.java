@@ -15,6 +15,11 @@
  */
 package org.ogema.rest.servlet;
 
+import java.security.AccessController;
+import java.security.PrivilegedAction;
+import java.util.ArrayList;
+import java.util.List;
+
 import javax.servlet.ServletException;
 
 import org.apache.felix.scr.annotations.Component;
@@ -37,6 +42,7 @@ import org.slf4j.LoggerFactory;
 @Service(Application.class)
 public class RestApp implements Application {
 
+	private static final String ALLOWED_ORIGIN_PROPERTY = "org.ogema.rest.allowedOrigin";
 	static final Logger logger = LoggerFactory.getLogger(RestApp.class);
 	private ApplicationManager appMan;
 	
@@ -53,23 +59,38 @@ public class RestApp implements Application {
 	private DataRecorder dataRecorder;
 	
 	@Override
-	public void start(ApplicationManager appManager) {
+	public void start(final ApplicationManager appManager) {
 		this.appMan = appManager;
-		RestServlet restServlet = new RestServlet(permMan, restAccess);
+		String allowedOrigin0 = AccessController.doPrivileged(new PrivilegedAction<String>() {
+
+			@Override
+			public String run() {
+				return appManager.getAppID().getBundle().getBundleContext().getProperty(ALLOWED_ORIGIN_PROPERTY);
+			}
+		});
+		allowedOrigin0 = allowedOrigin0 == null ? "" : allowedOrigin0;
+		final List<String> origins= new ArrayList<>();
+		for (String o: allowedOrigin0.split(",")) {
+			final String o2 = o.trim();
+			if (!o2.isEmpty())
+				origins.add(o2);
+		}
+		final CorsTool cors = new CorsTool(origins.isEmpty() ? null : origins);
+		RestServlet restServlet = new RestServlet(permMan, restAccess, cors);
 		try {
 			http.registerServlet(RestServlet.ALIAS, restServlet, null, null);
 			appManager.getLogger().info("REST servlet registered");
 		} catch (ServletException | NamespaceException ex) {
 			appManager.getLogger().error("could not register servlet", ex);
 		}
-		RestTypesServlet typesServlet  =new RestTypesServlet(permMan, restAccess);
+		RestTypesServlet typesServlet  =new RestTypesServlet(permMan, restAccess, cors);
 		try {
 			http.registerServlet(RestTypesServlet.ALIAS, typesServlet, null, null);
 			appManager.getLogger().info("REST types servlet registered");
 		} catch (ServletException | NamespaceException ex) {
 			appManager.getLogger().error("could not register servlet", ex);
 		}
-		RestPatternServlet patternServlet = new RestPatternServlet(permMan, restAccess);
+		RestPatternServlet patternServlet = new RestPatternServlet(permMan, restAccess, cors);
 		try {
 			http.registerServlet(RestPatternServlet.ALIAS, patternServlet, null, null);
 			appManager.getLogger().info("REST pattern servlet registered");
@@ -77,7 +98,7 @@ public class RestApp implements Application {
 			appManager.getLogger().error("could not register servlet", ex);
 		}
 		try {
-			http.registerServlet(RecordedDataServlet.ALIAS, new RecordedDataServlet(restAccess, dataRecorder), null, null);
+			http.registerServlet(RecordedDataServlet.ALIAS, new RecordedDataServlet(restAccess, dataRecorder, cors), null, null);
 			appManager.getLogger().info("Recorded data servlet registered");
 		} catch (ServletException | NamespaceException ex) {
 			appManager.getLogger().error("could not register servlet", ex);

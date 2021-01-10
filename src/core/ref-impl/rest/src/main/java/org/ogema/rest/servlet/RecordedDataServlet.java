@@ -60,6 +60,7 @@ import org.ogema.recordeddata.RecordedDataStorage;
 //@Property(name = HttpWhiteboardConstants.HTTP_WHITEBOARD_SERVLET_PATTERN, value = RecordedDataServlet.ALIAS)
 class RecordedDataServlet extends HttpServlet {
 
+	private static final String SUPPORTED_METHODS = "DELETE, GET, OPTIONS, POST";
     private static final long serialVersionUID = 1L;
 
     public final static String PARAM_START = "start";
@@ -74,16 +75,17 @@ class RecordedDataServlet extends HttpServlet {
 
     private final DataRecorder rda;
 	private final RestAccess restAcc;
+	private final CorsTool cors;
 	
-	RecordedDataServlet(RestAccess restAcc, DataRecorder rda) {
+	RecordedDataServlet(RestAccess restAcc, DataRecorder rda, CorsTool cors) {
 		this.restAcc = Objects.requireNonNull(restAcc);
 		this.rda = Objects.requireNonNull(rda);
+		this.cors = Objects.requireNonNull(cors);
 	}
 	
     @Override
     protected void doOptions(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
-        resp.setStatus(200);
-        resp.setHeader("Allow", "DELETE, GET, OPTIONS, POST");
+    	this.cors.handleOptions(req, resp, SUPPORTED_METHODS);
     }
     
     // two alternative ways to restrict the time interval: either append "/" + timestamp; OR use request
@@ -97,6 +99,7 @@ class RecordedDataServlet extends HttpServlet {
 		if (appman == null) {
             return;
         }
+		this.cors.handleOther(req, resp);
         try {
 	        final String pathInfo = req.getPathInfo();
 	        if (pathInfo == null || pathInfo.isEmpty()) {
@@ -196,6 +199,7 @@ class RecordedDataServlet extends HttpServlet {
 					req.getPathInfo(), (appman != null), Utils.mapParameters(req));
 		if (appman == null)
             return;
+		this.cors.handleOther(req, resp);
     	try {
 	        final String pathInfo = req.getPathInfo();
 	        if (pathInfo == null || pathInfo.isEmpty()) {
@@ -268,6 +272,7 @@ class RecordedDataServlet extends HttpServlet {
 					req.getPathInfo(), (appman != null), Utils.mapParameters(req));
 		if (appman == null)
             return;
+		this.cors.handleOther(req, resp);
     	try {
 	        final String pathInfo = req.getPathInfo();
 	        if (pathInfo == null || pathInfo.isEmpty()) {
