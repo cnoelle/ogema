@@ -113,11 +113,14 @@ public class SerializationManager {
 		return writer.toString();
 	}
 	
+	@SuppressWarnings("unchecked")
 	public FakePattern fromXml(String xml) throws JAXBException {
 		StringReader reader = new StringReader(xml);
-		@SuppressWarnings("unchecked")
-		JAXBElement<FakePattern> el = (JAXBElement<FakePattern>) unmarshaller.unmarshal(reader);
-		return el.getValue();
+		final Object result = unmarshaller.unmarshal(reader);
+		if (result instanceof FakePattern)
+			return (FakePattern) result;
+		else	
+			return ((JAXBElement<FakePattern>) result).getValue();
 	}
 	
 	/**
