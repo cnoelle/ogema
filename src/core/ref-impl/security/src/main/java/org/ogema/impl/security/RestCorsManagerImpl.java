@@ -13,18 +13,31 @@ import org.apache.felix.scr.annotations.Component;
 import org.apache.felix.scr.annotations.Service;
 import org.ogema.accesscontrol.RestCorsManager;
 import org.osgi.framework.BundleContext;
+import org.slf4j.LoggerFactory;
 
 @Component
 @Service(RestCorsManager.class)
 public class RestCorsManagerImpl implements RestCorsManager {
 	
 	private static final String ALLOWED_ORIGIN_PROPERTY = "org.ogema.rest.allowedOrigin";
+	private static final String MAX_AGE_PROPERTY = "org.ogema.rest.allowedOriginMaxAge";
+	private static final int DEFAULT_MAX_AGE = 600; // 10 min
 
 	private List<String> allowedOrigins;
+	/**
+	 * In seconds. A values of -1 disables caching, a value < -1 indicates not to set the header at all 
+	 * (which may default to a short caching interval, such as 5s, depending on the browser). Typical value
+	 * ranges between a few seconds and a few hours.
+	 * Default value: 10min
+	 * 
+	 * The allowed value range is capped, depending on the browser, see  
+	 * https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Access-Control-Max-Age
+	 */
+	private int maxAge;
 	
 	@Activate
 	protected void activate(final BundleContext ctx) {
-		String allowedOrigin0 = AccessController.doPrivileged(new PrivilegedAction<String>() {
+		final String allowedOrigin0 = AccessController.doPrivileged(new PrivilegedAction<String>() {
 
 			@Override
 			public String run() {
@@ -35,6 +48,13 @@ public class RestCorsManagerImpl implements RestCorsManager {
 			this.allowedOrigins = null;
 			return;
 		}
+		final String allowedOriginMaxAge = AccessController.doPrivileged(new PrivilegedAction<String>() {
+
+			@Override
+			public String run() {
+				return ctx.getProperty(MAX_AGE_PROPERTY);
+			}
+		});
 		final List<String> origins= new ArrayList<>();
 		for (String o: allowedOrigin0.split(",")) {
 			final String o2 = o.trim();
@@ -42,6 +62,17 @@ public class RestCorsManagerImpl implements RestCorsManager {
 				origins.add(o2);
 		}
 		this.allowedOrigins = origins;
+		if (allowedOriginMaxAge != null) {
+			try {
+				this.maxAge = Integer.parseInt(allowedOriginMaxAge);
+			} catch (NumberFormatException e) {
+				LoggerFactory.getLogger(RestCorsManagerImpl.class).warn("Invalid max age property {}: {}. Should be an integer. Disabling CORS maxAge property.",
+						MAX_AGE_PROPERTY, allowedOriginMaxAge);
+				this.maxAge = -2;
+			}
+		} else {
+			this.maxAge = DEFAULT_MAX_AGE;
+		}
 	}
 
 	@Override
@@ -57,6 +88,8 @@ public class RestCorsManagerImpl implements RestCorsManager {
         			resp.setHeader("Access-Control-Allow-Headers", "Authorization, Content-Type");
         			resp.setHeader("Access-Control-Allow-Methods", allowedMethods);
         			resp.setHeader("Vary", "Origin");
+        			if (this.maxAge > -2)
+        				resp.setHeader("Access-Control-Max-Age", String.valueOf(this.maxAge));
         		}
         	}
         }
